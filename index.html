@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="GLO独占連載『わたる』第29回">
+<title>わたる 第29回</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ink:      #2b2b2f;
+    --ink-2:    #55555c;
+    --muted:    #83838c;
+    --accent:   #1f3a6e;
+    --accent-2: #2f56a0;
+    --line:     #dcdde2;
+    --line-2:   #ecedf1;
+    --tint:     #f5f6f9;
+    --sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0; background: #fff; color: var(--ink);
+    font-family: var(--sans); font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+  .wrap{ max-width: 680px; margin: 0 auto; padding: 0 16px; width: 100%; }
+  p{ margin: 0; }
+  a{ color: var(--accent-2); }
+  :focus-visible{ outline: 2px solid var(--accent-2); outline-offset: 3px; }
+
+  .testbar{
+    background: #fff3c4; color: #5a4507; font-size: 11.5px; line-height: 1.6;
+    padding: 9px 14px; text-align: center;
+  }
+
+  /* 並び順：公開前は 案内→本文、公開後は 本文→案内 */
+  .stack{ display: flex; flex-direction: column; }
+  .s-count{ order: 1; }
+  .s-keep { order: 2; }
+  .s-body { order: 3; }
+  body.is-open .s-body{ order: 2; }
+  body.is-open .s-keep{ order: 3; }
+
+  /* ---------- カウントダウン ---------- */
+  .cd-card{
+    margin: 22px auto 0; padding: 26px 20px 28px;
+    border: 1px solid var(--line); border-radius: 4px;
+    background: linear-gradient(180deg, #fbfcfe, var(--tint));
+    text-align: center;
+  }
+  .cd-eyebrow{
+    font-size: 11px; letter-spacing: .18em; color: var(--accent);
+    font-weight: 700;
+  }
+  .cd-title{
+    margin-top: 10px; font-family: var(--serif); font-weight: 600;
+    font-size: clamp(22px, 6.4vw, 28px); letter-spacing: .06em; color: var(--ink);
+  }
+  .cd-title small{ font-size: .56em; font-weight: 500; color: var(--ink-2); letter-spacing: .04em; }
+  .cd-rule{
+    width: 46px; height: 2px; margin: 16px auto 0; background: var(--accent); opacity: .65;
+  }
+  .cd-label{
+    margin-top: 18px; font-size: 12.5px; letter-spacing: .14em; color: var(--ink-2); font-weight: 500;
+  }
+  .cd-nums{
+    margin-top: 10px; display: flex; align-items: flex-end; justify-content: center; gap: 2px;
+  }
+  .cd-u{ display: flex; align-items: baseline; }
+  .cd-n{
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(34px, 10vw, 46px); line-height: 1; color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .cd-s{ font-size: 11.5px; color: var(--muted); margin: 0 10px 3px 3px; }
+  .cd-when{
+    display: inline-block; margin-top: 18px; padding: 9px 18px;
+    border-radius: 999px; background: var(--accent); color: #fff;
+    font-size: clamp(12.5px, 3.6vw, 14px); font-weight: 700; letter-spacing: .06em;
+  }
+  .cd-when.live{ background: #b3261e; }
+  .cd-note{
+    margin-top: 14px; font-size: 12px; line-height: 1.85; color: var(--muted);
+  }
+
+  /* ---------- ホーム画面・お気に入り ---------- */
+  .keep{
+    margin: 20px auto 0; padding: 22px 20px 24px;
+    border: 1px solid var(--line); border-radius: 4px; background: #fff;
+  }
+  .keep-h{
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(17px, 4.8vw, 20px); line-height: 1.6; color: var(--ink);
+  }
+  .keep-lead{
+    margin-top: 12px; font-size: 13.5px; line-height: 1.95; color: var(--ink-2);
+  }
+  .os-tabs{ display: flex; gap: 6px; margin-top: 18px; }
+  .os-tab{
+    flex: 1; padding: 10px 4px; border: 1px solid var(--line); border-radius: 3px;
+    background: #fff; color: var(--ink-2);
+    font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+    cursor: pointer; transition: all .15s ease;
+  }
+  .os-tab[data-on="1"]{ background: var(--accent); border-color: var(--accent); color: #fff; }
+  .steps{ margin: 18px 0 0; padding: 0; list-style: none; counter-reset: st; }
+  .steps li{
+    display: grid; grid-template-columns: 22px 1fr; gap: 11px;
+    padding: 8px 0; font-size: 13.5px; line-height: 1.9; color: var(--ink-2);
+  }
+  .steps li::before{
+    counter-increment: st; content: counter(st);
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--tint); border: 1px solid var(--line); color: var(--accent);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps b{ color: var(--accent); font-weight: 700; }
+  .steps-note{ margin-top: 10px; font-size: 11.5px; line-height: 1.8; color: var(--muted); }
+  .copy-btn{
+    margin-top: 18px; display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border: 1px solid var(--accent); border-radius: 3px;
+    background: #fff; color: var(--accent);
+    font-family: var(--sans); font-size: 12.5px; font-weight: 700;
+    cursor: pointer; transition: all .15s ease;
+  }
+  .copy-btn:hover{ background: var(--tint); }
+  .copy-hint{
+    margin-top: 11px; font-size: 11.5px; line-height: 1.8; color: var(--muted);
+    word-break: break-all;
+  }
+
+  /* ---------- 本文 ---------- */
+  .bodysec{ position: relative; margin-top: 28px; }
+  .article{
+    font-size: 16.5px; line-height: 2.0; color: var(--ink); letter-spacing: .01em;
+  }
+  .article p{ margin: 0 0 1.5em; }
+  .article h2{
+    margin: 2.2em 0 1.1em; font-family: var(--serif); font-weight: 600;
+    font-size: 21px; letter-spacing: .1em; color: var(--ink);
+    padding-bottom: .4em; border-bottom: 1px solid var(--line-2);
+  }
+  .article .center{ text-align: center; }
+  .article a{ color: #1a34c8; text-decoration: none; }
+  .article a:hover{ text-decoration: underline; }
+  .article .prev{ margin-bottom: 2em; font-weight: 700; }
+  .article .notice{
+    margin: 2.4em 0; padding: 18px 16px; border: 1px solid var(--line);
+    border-radius: 4px; background: var(--tint);
+    font-size: 14.5px; line-height: 1.95; text-align: center; color: var(--ink-2);
+  }
+  .article .links{ margin-top: 2em; font-size: 15px; line-height: 1.9; }
+  .article .links p{ margin: 0 0 1.1em; }
+  .article .sig{
+    margin-top: 2.4em; padding-top: 18px; border-top: 1px solid var(--line-2);
+    font-size: 12.5px; line-height: 1.95; color: var(--muted);
+  }
+
+  /* ---------- ロック（公開前） ---------- */
+  .lockveil{
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: linear-gradient(180deg,
+      rgba(255,255,255,.30) 0%,
+      rgba(255,255,255,.72) 14%,
+      rgba(255,255,255,.94) 30%,
+      #fff 46%, #fff 100%);
+  }
+  .lockstack{
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: space-between;
+    padding: 150px 0 60px;
+  }
+  .lockcard{
+    width: 100%; max-width: 440px;
+    padding: 26px 20px 24px; text-align: center;
+    border: 1px solid var(--line); border-radius: 4px;
+    background: #fff; box-shadow: 0 10px 30px rgba(30,40,70,.12);
+  }
+  .waitcard{
+    display: block; width: 100%; max-width: 440px;
+    padding: 18px 18px 19px; text-decoration: none;
+    border: 1px solid var(--line); border-radius: 4px;
+    background: #fff; box-shadow: 0 6px 22px rgba(30,40,70,.08);
+  }
+  .waitcard .wc-k{
+    font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--accent);
+  }
+  .waitcard .wc-t{
+    margin-top: 8px; font-size: 13.5px; line-height: 1.8; color: var(--ink);
+  }
+  .waitcard .wc-t::after{ content: " ›"; color: var(--accent-2); font-weight: 700; }
+  .waitcard:hover{ border-color: var(--accent-2); }
+  .lockcard .lk-ico{ color: var(--accent); }
+  .lockcard .lk-h{
+    margin-top: 12px; font-family: var(--serif); font-weight: 600;
+    font-size: clamp(17px, 4.8vw, 19px); line-height: 1.7; color: var(--ink);
+  }
+  .lockcard .lk-p{
+    margin-top: 12px; font-size: 13px; line-height: 1.95; color: var(--ink-2);
+  }
+  body:not(.is-open) .article{
+    filter: blur(6px);
+    -webkit-user-select: none; user-select: none;
+    pointer-events: none;
+  }
+  body.is-open .lockveil,
+  body.is-open .lockstack{ display: none; }
+
+  footer{
+    flex: 1 0 auto; padding: 26px 16px 34px; text-align: center;
+  }
+  footer p{ font-size: 11.5px; line-height: 1.9; color: var(--muted); }
+
+  @media (max-width: 560px){
+    .wrap{ padding: 0 14px; }
+    .lockcard{ top: 150px; padding: 22px 16px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="testbar" id="testBar" style="display:none"></div>
+
+<div class="wrap stack">
+
+  <!-- ============ カウントダウン ============ -->
+  <section class="s-count">
+    <div class="cd-card">
+      <div class="cd-eyebrow">GOLD LIFE ONLINE 独占連載</div>
+      <div class="cd-title">『わたる』<small id="cdEp">第29回</small></div>
+      <div class="cd-rule"></div>
+      <div class="cd-label" id="cdLabel">最新話公開まで</div>
+      <div class="cd-nums" id="cdNums"></div>
+      <div class="cd-when" id="cdWhen">10月3日（金）22時 公開</div>
+      <p class="cd-note" id="cdNote">公開の時間になると、この下に本文が表示されます。</p>
+    </div>
+  </section>
+
+  <!-- ============ ホーム画面・お気に入り ============ -->
+  <section class="s-keep">
+    <div class="keep">
+      <div class="keep-h">このページを、ホーム画面やお気に入りに。</div>
+      <p class="keep-lead" id="keepLead">スマートフォンならホーム画面に追加、パソコンならお気に入り（ブックマーク）に登録しておけば、公開の時間になったとき、すぐにこのページへ戻ってこられます。アプリのインストールは必要ありません。</p>
+      <div class="os-tabs">
+        <button class="os-tab" type="button" data-os="ios">iPhone</button>
+        <button class="os-tab" type="button" data-os="android">Android</button>
+        <button class="os-tab" type="button" data-os="pc">パソコン</button>
+      </div>
+      <ol class="steps" id="steps"></ol>
+      <p class="steps-note" id="stepsNote"></p>
+      <button class="copy-btn" type="button" data-copy>
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><rect x="4.5" y="4.5" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M9.5 2.5h-7v7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        <span>うまくいかないときはURLをコピー</span>
+      </button>
+      <p class="copy-hint" id="copyHint"></p>
+    </div>
+  </section>
+
+  <!-- ============ 本文 ============ -->
+  <section class="s-body bodysec">
+    <div class="lockveil"></div>
+    <div class="lockstack">
+      <div class="lockcard">
+        <svg class="lk-ico" width="22" height="24" viewBox="0 0 20 22" fill="none" aria-hidden="true">
+          <path d="M5.5 9V6.2a4.5 4.5 0 019 0V9" stroke="currentColor" stroke-width="1.5"/>
+          <rect x="3" y="9" width="14" height="11" rx="1.6" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <p class="lk-h" id="lockH">10月3日（土）22時に<br>公開されます</p>
+        <p class="lk-p">公開の時間になると、この場所に本文が表示されます。<br>上の案内から、このページをホーム画面やお気に入りに追加してお待ちください。</p>
+      </div>
+
+      <a class="waitcard" href="https://renaissance-media.jp/articles/-/27766" target="_top">
+        <div class="wc-k">前回・第28回</div>
+        <div class="wc-t">出産直後に妻が急変…「大丈夫だから。俺がいるから」と叫ぶと、妻は微かに目を細めた。笑おうとしていた。なぜか涙が出た。</div>
+      </a>
+
+      <a class="waitcard" href="https://renaissance-media.jp/articles/-/27565" target="_top">
+        <div class="wc-k">第1回から読む</div>
+        <div class="wc-t">父の携帯を見てしまった母…「昨日も最高に幸せだった…次いつ会えるかな」メールの送り主は、母の親友だった。</div>
+      </a>
+
+      <a class="waitcard" href="https://renaissance-media.jp/category/gr2001" target="_top">
+        <div class="wc-k">連載一覧</div>
+        <div class="wc-t">『わたる』これまでの全話を読む</div>
+      </a>
+    </div>
+
+    <div class="article">
+      <p class="center prev"><a href="https://renaissance-media.jp/articles/-/27766" target="_top"><span style="color:#0000CD;">【前回の記事を読む】出産直後に妻が急変…「大丈夫だから。俺がいるから」と叫ぶと、妻は微かに目を細めた。笑おうとしていた。なぜか涙が出た。</span></a></p>
+
+      <h2>4</h2>
+
+      <p>そのとき、機械の音が変わった。</p>
+      <p>医師と看護師が一斉に動いた。渉はドアの外に出された。</p>
+      <p>「少し待っていてください」</p>
+      <p>ドアが閉まった。</p>
+      <p>渉は廊下に立ったまま、動けなかった。でも、足が震えていた。</p>
+      <p>どれくらいそうしていたかわからない。やがて、ドアが開いた。</p>
+      <p>医師が出てきた。その顔を見た瞬間、渉はすべてを理解した。</p>
+      <p>「奥様は……出産直後に右心不全が急激に悪化しまして。肺高血圧症による心不全で……最善を尽くしましたが」</p>
+      <p>渉には、その後の言葉が聞こえなかった。</p>
+      <p>廊下が、遠くなった。</p>
+
+      <h2>5</h2>
+
+      <p>千春が死んだ。</p>
+      <p>その事実が、渉の頭に入ってくるまでに、時間がかかった。</p>
+      <p>医師が何かを説明していた。出産直後に肺動脈圧が急激に上昇し、右心室が限界を超えた。心不全に至るまで、時間がなかった。最善を尽くしたが、間に合わなかった。そういう説明だったと思う。渉はうなずいたが、何も頭に入らなかった。</p>
+      <p>医師が去った後、廊下に1人残された。</p>
+      <p>壁に背中をつけたまま、そのままずるずると床に座り込んだ。膝を抱えた。病院の廊下の冷たさが、ズボン越しに伝わってきた。</p>
+      <p>泣けなかった。</p>
+      <p>泣き方がわからなかった。</p>
+      <p>泣く場所がなかった。泣く資格がないと思っていた。だからずっと、泣かずに生きてきた。</p>
+      <p>でも今は違った。</p>
+      <p>（千春）</p>
+      <p>心の中で呼んだ。</p>
+      <p>「千春」</p>
+      <p>気づけば声に出ていた。</p>
+      <p>返事はなかった。</p>
+      <p>当たり前だ。もう二度と、返ってこない。「渉」と呼んでくれる声も、くすりと笑う声も、夜中に「眠れない」とつぶやく声も、全部消えた。</p>
+      <p>渉の目から、涙がこぼれた。</p>
+      <p>1粒、2粒。それからは止まらなかった。</p>
+      <p>廊下の壁に頭を当てて、声を殺しそうとした。でも、できなかった。ぐ、という声が漏れて、それからは抑えられなかった。病院の廊下で、床に座り込んだまま、渉は泣いた。</p>
+      <p>みっともなかった。でも、どうにもできなかった。</p>
+      <p>（なんで死んだんだよ）</p>
+      <p>（なんで置いていったんだよ）</p>
+      <p>千春に向かって、心の中で叫んだ。悲しいのか、苦しいのか、自分でもわからなかった。ただ、胸の中で何かが破裂したような感覚があって、それが涙になって出てくることしか、できなかった。</p>
+      <p>どれくらいそうしていたかわからない。</p>
+      <p>助産師が来て「赤ちゃんを抱いてあげてください」と言った。</p>
+      <p>渉は顔を上げた。目が腫れていた。鼻が詰まっていた。それでも立ち上がって、腕を差し出した。</p>
+      <p>赤ちゃんが渡された。</p>
+      <p>小さかった。こんなに小さいのに、ちゃんと重かった。</p>
+      <p>目が閉じていた。小さな鼻が、かすかに動いていた。生きていた。</p>
+      <p>渉は赤ちゃんの顔を見た。</p>
+      <p>千春の面影があった。目もとのかたちが、よく似ていた。</p>
+      <p>（千春、生きてるよ）</p>
+      <p>心の中で言った。</p>
+      <p>（この子の中に、千春がいる）</p>
+      <p>また涙が出た。今度は声も出なかった。ただ、涙だけがぼろぼろとこぼれた。赤ちゃんの顔に落ちそうになって、渉は顔を背けた。</p>
+
+      <div class="notice">
+        続きは、当サイト「ゴールドライフオンライン（GLO）」で限定公開いたします。<br>
+        次回更新は10月4日（日）、22時の予定です。<br>
+        当サイトを【ホーム画面追加／ブックマーク】してお待ちください。
+      </div>
+
+      <div class="links">
+        <p><span style="font-size:19px;">👉<a href="https://renaissance-media.jp/category/gr2001" target="_top"><span style="color:#0000FF;">『わたる』連載記事一覧は<u>こちら</u></span></a></span></p>
+        <p>👉物語を最初から読む<br>
+          <a href="https://renaissance-media.jp/articles/-/27565" target="_top"><span style="color:#0000FF;">父の携帯を見てしまった母…「昨日も最高に幸せだった…次いつ会えるかな」メールの送り主は、母の親友だった。母は黙ったまま動かず…</span></a></p>
+        <p><a href="https://renaissance-media.jp/articles/-/26916" target="_top"><span style="color:#0000CD;">【イチオシ記事】隣の部屋の男から誘われた。つい昨夜、別の女性と愛し合う&ldquo;あの声&rdquo;が聞こえたのに…なぜか断れず、誘いに乗ってしまった。</span></a></p>
+      </div>
+
+      <p class="sig">ゴールドライフオンライン（GLO）は、表現者を応援するウェブメディアです。<br>
+        生身の人間が紡ぐリアルな言葉だからこそ、読者の心を揺さぶる力があると確信しています。<br>
+        あなたも、&quot;表現者&quot;になってみませんか？<br>
+        ゴールドライフオンライン（GLO）編集部：glo_henshu＠gentosha.co.jp</p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>公開日時や掲載内容は、予告なく変更となる場合があります。</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ======================================================================
+     ▼▼ 編集するのはこのブロックだけです ▼▼
+     ====================================================================== */
+
+  // 公開スケジュール（日本時間）。上から順に、次に来る回までカウントダウンします。
+  // 1件目 = この記事（第29回）の公開時刻。ここを過ぎると本文のロックが外れます。
+  var SCHEDULE = [
+    { at: "2026-10-03T22:00", ep: "第29回" },
+    { at: "2026-10-04T22:00", ep: "第30回" }
+  ];
+
+  // 読者に保存してもらうページのURL（この記事のURL）
+  var PAGE_URL = "https://renaissance-media.jp/articles/-/27795";
+
+  /* ======================================================================
+     ▲▲ ここまで ▲▲
+     ====================================================================== */
+
+  var WD = ["日","月","火","水","木","金","土"];
+  var pad = function (v) { return v < 10 ? "0" + v : String(v); };
+
+  function track(name, params) {
+    try { if (window.gtag) { window.gtag("event", name, params || {}); } } catch (e) {}
+  }
+
+  // "2026-10-03T22:00"（日本時間）→ UTCミリ秒
+  function jst(str) { return Date.parse(str + "+09:00"); }
+
+  var sched = SCHEDULE.map(function (s) {
+    var t = jst(s.at);
+    var j = new Date(t + 9 * 3600 * 1000);
+    return {
+      t: t, ep: s.ep,
+      label: (j.getUTCMonth() + 1) + "月" + j.getUTCDate() + "日（" + WD[j.getUTCDay()] + "）" +
+             j.getUTCHours() + "時"
+    };
+  });
+  var RELEASE = sched[0];
+
+  /* ---------- テスト表示 ----------
+     ?state=before  公開前
+     ?state=soon    公開30分前
+     ?state=after   公開直後
+     ?now=2026-10-03T22:30 のように時刻指定も可
+     読者向けの通常URLには黄色い帯は出ません                                */
+  function testTime() {
+    var m = /[?&]state=([a-z]+)/.exec(location.search);
+    if (m) {
+      if (m[1] === "before") { return jst("2026-10-01T22:30"); }
+      if (m[1] === "soon")   { return RELEASE.t - 30 * 60 * 1000; }
+      if (m[1] === "after")  { return RELEASE.t + 10 * 60 * 1000; }
+      if (m[1] === "next")   { return sched[1] ? sched[1].t + 10 * 60 * 1000 : RELEASE.t + 864e5; }
+    }
+    var d = /[?&]now=([^&]+)/.exec(location.search);
+    if (d) { var t = Date.parse(decodeURIComponent(d[1]) + "+09:00"); if (!isNaN(t)) { return t; } }
+    return null;
+  }
+  var FAKE = testTime();
+  if (FAKE !== null) {
+    var bar = document.getElementById("testBar");
+    var jj = new Date(FAKE + 9 * 3600 * 1000);
+    bar.style.display = "";
+    bar.textContent = "【テスト表示】" + (jj.getUTCMonth() + 1) + "月" + jj.getUTCDate() + "日 " +
+      pad(jj.getUTCHours()) + ":" + pad(jj.getUTCMinutes()) +
+      " 時点の見え方です。読者向けのURLにはこの表示は出ません。";
+  }
+  function now() { return FAKE !== null ? FAKE : Date.now(); }
+
+  var elEp    = document.getElementById("cdEp");
+  var elLabel = document.getElementById("cdLabel");
+  var elNums  = document.getElementById("cdNums");
+  var elWhen  = document.getElementById("cdWhen");
+  var elNote  = document.getElementById("cdNote");
+  var elLockH = document.getElementById("lockH");
+  var elKeep  = document.getElementById("keepLead");
+
+  function numsHtml(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var d = Math.floor(s / 86400);
+    var h = Math.floor((s % 86400) / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    var out = "";
+    if (d > 0) { out += '<span class="cd-u"><span class="cd-n">' + pad(d) + '</span><span class="cd-s">日</span></span>'; }
+    out += '<span class="cd-u"><span class="cd-n">' + pad(h) + '</span><span class="cd-s">時間</span></span>';
+    out += '<span class="cd-u"><span class="cd-n">' + pad(m) + '</span><span class="cd-s">分</span></span>';
+    if (d === 0) { out += '<span class="cd-u"><span class="cd-n">' + pad(sec) + '</span><span class="cd-s">秒</span></span>'; }
+    return out;
+  }
+
+  function render() {
+    var t = now();
+    var open = t >= RELEASE.t;
+    document.body.classList.toggle("is-open", open);
+
+    var next = null;
+    for (var i = 0; i < sched.length; i++) { if (t < sched[i].t) { next = sched[i]; break; } }
+
+    if (!open) {
+      elEp.textContent = RELEASE.ep;
+      elLabel.textContent = "最新話公開まで";
+      elNums.innerHTML = numsHtml(RELEASE.t - t);
+      elNums.style.display = "";
+      elWhen.className = "cd-when";
+      elWhen.textContent = RELEASE.label + " 公開";
+      elNote.textContent = "公開の時間になると、この下に本文が表示されます。";
+      elLockH.innerHTML = RELEASE.label + "に<br>公開されます";
+      elKeep.textContent = "スマートフォンならホーム画面に追加、パソコンならお気に入り（ブックマーク）に登録しておけば、公開の時間になったとき、すぐにこのページへ戻ってこられます。アプリのインストールは必要ありません。";
+    } else if (next) {
+      elEp.textContent = next.ep;
+      elLabel.textContent = "次回更新まで";
+      elNums.innerHTML = numsHtml(next.t - t);
+      elNums.style.display = "";
+      elWhen.className = "cd-when";
+      elWhen.textContent = next.label + " 公開予定";
+      elNote.textContent = RELEASE.ep + "は公開中です。下からお読みいただけます。";
+      elKeep.textContent = "次回も、ホーム画面やお気に入りからすぐに戻ってこられます。まだの方は、この機会に追加しておいてください。";
+    } else {
+      elEp.textContent = RELEASE.ep;
+      elLabel.textContent = "本編公開中";
+      elNums.innerHTML = "";
+      elNums.style.display = "none";
+      elWhen.className = "cd-when live";
+      elWhen.textContent = "公開中";
+      elNote.textContent = "続きは追って公開いたします。ホーム画面やお気に入りに追加してお待ちください。";
+      elKeep.textContent = "次回も、ホーム画面やお気に入りからすぐに戻ってこられます。まだの方は、この機会に追加しておいてください。";
+    }
+  }
+  render();
+  setInterval(render, 1000);
+
+  /* ---------- ホーム画面・お気に入り ---------- */
+  var STEPS = {
+    ios: {
+      steps: [
+        "画面下の<b>共有ボタン</b>（四角に上向きの矢印）を押します",
+        "メニューを下にスクロールして<b>「ホーム画面に追加」</b>を選びます",
+        "右上の<b>「追加」</b>を押せば完了です"
+      ],
+      note: "※Safari以外のブラウザでは「ホーム画面に追加」が出ないことがあります。その場合はSafariで開き直してください。"
+    },
+    android: {
+      steps: [
+        "画面右上の<b>メニュー</b>（縦に点が3つ並んだボタン）を押します",
+        "<b>「ホーム画面に追加」</b>を選びます",
+        "<b>「追加」</b>を押せば完了です"
+      ],
+      note: "※機種によっては「アプリをインストール」と表示されますが、同じように追加できます。"
+    },
+    pc: {
+      steps: [
+        "アドレスバー右端の<b>星のマーク（☆）</b>を押します。キーボードなら <b>Ctrl+D</b>（Macは <b>⌘+D</b>）でも同じです",
+        "表示された画面で<b>「完了」</b>を押すと、お気に入りに登録されます",
+        "公開の時間になったら、お気に入りからこのページを開いてください"
+      ],
+      note: "※スマートフォンでご覧の方は、上のタブから端末を選んでください。"
+    }
+  };
+  function detectOS() {
+    var ua = navigator.userAgent || "";
+    if (/iPhone|iPad|iPod/i.test(ua)) { return "ios"; }
+    if (/Android/i.test(ua)) { return "android"; }
+    if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) { return "ios"; }
+    return "pc";
+  }
+  function showSteps(os) {
+    var data = STEPS[os] || STEPS.pc;
+    document.getElementById("steps").innerHTML =
+      data.steps.map(function (s) { return "<li><span>" + s + "</span></li>"; }).join("");
+    document.getElementById("stepsNote").innerHTML = data.note;
+    Array.prototype.forEach.call(document.querySelectorAll(".os-tab"), function (t) {
+      t.setAttribute("data-on", t.getAttribute("data-os") === os ? "1" : "0");
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".os-tab"), function (t) {
+    t.addEventListener("click", function () {
+      showSteps(t.getAttribute("data-os"));
+      track("wataru_ostab", { os: t.getAttribute("data-os") });
+    });
+  });
+  showSteps(detectOS());
+
+  /* ---------- URLコピー ---------- */
+  document.getElementById("copyHint").innerHTML =
+    "コピーしたURLをメモアプリに貼り付けておくと、公開の時間に、そこから開けます。<br>" + PAGE_URL;
+
+  function legacy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.position = "absolute"; ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"), function (btn) {
+    btn.addEventListener("click", function () {
+      var span = btn.querySelector("span");
+      var original = span.textContent;
+      var flash = function (msg) {
+        span.textContent = msg;
+        setTimeout(function () { span.textContent = original; }, 2200);
+      };
+      track("wataru_copy", {});
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(PAGE_URL).then(
+          function () { flash("URLをコピーしました"); },
+          function () { flash(legacy(PAGE_URL) ? "URLをコピーしました" : "コピーできませんでした"); }
+        );
+      } else {
+        flash(legacy(PAGE_URL) ? "URLをコピーしました" : "コピーできませんでした");
+      }
+    });
+  });
+
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest ? ev.target.closest(".article a") : null;
+    if (a) { track("wataru_bodylink", { href: a.getAttribute("href") }); }
+  });
+})();
+</script>
+</body>
+</html>
