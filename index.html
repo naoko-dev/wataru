@@ -89,6 +89,33 @@
     margin-top: 9px; font-size: 12px; font-weight: 700;
     letter-spacing: .1em; color: var(--ink-2);
   }
+  /* 最新話が公開されたとき */
+  .cd-live{ margin-top: 20px; }
+  .cd-live-k{
+    font-size: clamp(13.5px, 3.9vw, 15px); font-weight: 700;
+    letter-spacing: .12em; color: #b3261e;
+  }
+  .cd-live-btn{
+    margin-top: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 16px 30px; border-radius: 999px; text-decoration: none;
+    background: linear-gradient(180deg, #d8352b 0%, #b3261e 100%);
+    color: #fff; font-family: var(--sans); font-weight: 700;
+    font-size: clamp(15.5px, 4.4vw, 18px); letter-spacing: .06em;
+    box-shadow: 0 10px 26px rgba(179,38,30,.34);
+    animation: livepulse 2.4s ease-in-out infinite;
+  }
+  .cd-live-btn:hover{ filter: brightness(1.07); }
+  @keyframes livepulse{
+    0%, 100%{ transform: scale(1); }
+    50%     { transform: scale(1.035); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .cd-live-btn{ animation: none; }
+  }
+  .cd-divider{
+    width: 100%; height: 1px; margin: 24px 0 0; background: var(--line);
+  }
+
   .cd-when{
     display: inline-block; margin-top: 20px; padding: 12px 24px;
     border-radius: 999px; background: var(--accent); color: #fff;
@@ -323,9 +350,22 @@
       <div class="cd-eyebrow">ゴールドライフオンライン 独占連載</div>
       <div class="cd-title">『わたる』<small id="cdEp">第29回</small></div>
       <div class="cd-rule"></div>
-      <div class="cd-label" id="cdLabel">最新話公開まで</div>
-      <div class="cd-nums" id="cdNums"></div>
-      <div class="cd-when" id="cdWhen">10月3日（金）22時 公開</div>
+
+      <div class="cd-live" id="cdLive" hidden>
+        <div class="cd-live-k">最新話が公開されました</div>
+        <a class="cd-live-btn" id="cdLiveBtn" href="https://renaissance-media.jp/category/gr2001" target="_top">
+          <span id="cdLiveTx">最新話を読む</span>
+          <svg width="8" height="12" viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1.2 1.2L5.6 5.5 1.2 9.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <div class="cd-divider" id="cdDivider" hidden></div>
+      </div>
+
+      <div id="cdWait">
+        <div class="cd-label" id="cdLabel">最新話公開まで</div>
+        <div class="cd-nums" id="cdNums"></div>
+        <div class="cd-when" id="cdWhen">10月3日（土）22時 公開</div>
+      </div>
+
       <p class="cd-note" id="cdNote">公開の時間になると、この下に本文が表示されます。</p>
     </div>
   </section>
@@ -481,13 +521,19 @@
 
   // 公開スケジュール（日本時間）。上から順に、次に来る回までカウントダウンします。
   // 1件目 = この記事（第29回）の公開時刻。ここを過ぎると本文のロックが外れます。
+  // url … その回の記事URL。公開時刻を過ぎると「最新話が公開されました」ボタンになります。
+  //        URLがまだ決まっていない場合は "" のままで構いません（連載一覧へ飛びます）。
+  //        回を追加したいときは、この配列に1行足してください。
   var SCHEDULE = [
-    { at: "2026-10-03T22:00", ep: "第29回" },
-    { at: "2026-10-04T22:00", ep: "第30回" }
+    { at: "2026-10-03T22:00", ep: "第29回", url: "https://renaissance-media.jp/articles/-/27795" },
+    { at: "2026-10-04T22:00", ep: "第30回", url: "https://renaissance-media.jp/articles/-/27895" }
   ];
 
   // 読者に保存してもらうページのURL（この記事のURL）
   var PAGE_URL = "https://renaissance-media.jp/articles/-/27795";
+
+  // URLが未設定のときの飛び先（『わたる』連載記事一覧）
+  var LIST_URL = "https://renaissance-media.jp/category/gr2001";
 
   /* ======================================================================
      ▲▲ ここまで ▲▲
@@ -507,7 +553,7 @@
     var t = jst(s.at);
     var j = new Date(t + 9 * 3600 * 1000);
     return {
-      t: t, ep: s.ep,
+      t: t, ep: s.ep, url: s.url || "",
       label: (j.getUTCMonth() + 1) + "月" + j.getUTCDate() + "日（" + WD[j.getUTCDay()] + "）" +
              j.getUTCHours() + "時"
     };
@@ -550,6 +596,11 @@
   var elNote  = document.getElementById("cdNote");
   var elLockH = document.getElementById("lockH");
   var elKeep  = document.getElementById("keepLead");
+  var elLive  = document.getElementById("cdLive");
+  var elLiveBtn = document.getElementById("cdLiveBtn");
+  var elLiveTx  = document.getElementById("cdLiveTx");
+  var elDivider = document.getElementById("cdDivider");
+  var elWait  = document.getElementById("cdWait");
 
   function numsHtml(ms) {
     var s = Math.max(0, Math.floor(ms / 1000));
@@ -573,34 +624,53 @@
     var next = null;
     for (var i = 0; i < sched.length; i++) { if (t < sched[i].t) { next = sched[i]; break; } }
 
+    // すでに公開された「この記事より後の回」のうち、いちばん新しいもの
+    var released = null;
+    for (var j = 1; j < sched.length; j++) { if (t >= sched[j].t) { released = sched[j]; } }
+
     if (!open) {
+      elLive.hidden = true;
+      elWait.hidden = false;
       elEp.textContent = RELEASE.ep;
       elLabel.textContent = "最新話公開まで";
       elNums.innerHTML = numsHtml(RELEASE.t - t);
-      elNums.style.display = "";
-      elWhen.className = "cd-when";
       elWhen.textContent = RELEASE.label + " 公開";
       elNote.textContent = "公開の時間になると、この下に本文が表示されます。";
       elLockH.textContent = RELEASE.label;
       elKeep.textContent = "スマートフォンならホーム画面に追加、パソコンならお気に入り（ブックマーク）に登録しておけば、公開の時間になったとき、すぐにこのページへ戻ってこられます。アプリのインストールは必要ありません。";
-    } else if (next) {
-      elEp.textContent = next.ep;
+      return;
+    }
+
+    elKeep.textContent = "次回も、ホーム画面やお気に入りからすぐに戻ってこられます。まだの方は、この機会に追加しておいてください。";
+
+    // 最新話が公開されている場合は、記事へのボタンを出す
+    if (released) {
+      elLive.hidden = false;
+      elLiveTx.textContent = released.ep + "を読む";
+      elLiveBtn.href = released.url || LIST_URL;
+      elEp.textContent = released.ep;
+    } else {
+      elLive.hidden = true;
+      elEp.textContent = next ? next.ep : RELEASE.ep;
+    }
+
+    // さらに次の回があれば、そこまでのカウントダウンを続ける
+    if (next) {
+      elWait.hidden = false;
       elLabel.textContent = "次回更新まで";
       elNums.innerHTML = numsHtml(next.t - t);
-      elNums.style.display = "";
-      elWhen.className = "cd-when";
       elWhen.textContent = next.label + " 公開予定";
-      elNote.textContent = RELEASE.ep + "は公開中です。下からお読みいただけます。";
-      elKeep.textContent = "次回も、ホーム画面やお気に入りからすぐに戻ってこられます。まだの方は、この機会に追加しておいてください。";
     } else {
-      elEp.textContent = RELEASE.ep;
-      elLabel.textContent = "本編公開中";
-      elNums.innerHTML = "";
-      elNums.style.display = "none";
-      elWhen.className = "cd-when live";
-      elWhen.textContent = "公開中";
+      elWait.hidden = true;
+    }
+    if (elDivider) { elDivider.hidden = !(released && next); }
+
+    if (released) {
+      elNote.textContent = "上のボタンから最新話をお読みいただけます。" + RELEASE.ep + "の本文は、この下からお読みいただけます。";
+    } else if (next) {
+      elNote.textContent = RELEASE.ep + "は公開中です。下からお読みいただけます。";
+    } else {
       elNote.textContent = "続きは追って公開いたします。ホーム画面やお気に入りに追加してお待ちください。";
-      elKeep.textContent = "次回も、ホーム画面やお気に入りからすぐに戻ってこられます。まだの方は、この機会に追加しておいてください。";
     }
   }
   render();
@@ -693,8 +763,12 @@
   });
 
   document.addEventListener("click", function (ev) {
-    var a = ev.target.closest ? ev.target.closest(".article a") : null;
+    if (!ev.target.closest) { return; }
+    var a = ev.target.closest(".article a");
     if (a) { track("wataru_bodylink", { href: a.getAttribute("href") }); }
+    if (ev.target.closest("#cdLiveBtn")) { track("wataru_latest", { href: elLiveBtn.getAttribute("href") }); }
+    var w = ev.target.closest(".waitcard");
+    if (w) { track("wataru_waitcard", { href: w.getAttribute("href") }); }
   });
 })();
 </script>
